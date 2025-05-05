@@ -1,0 +1,204 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNAKE-GOKU-FAN</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>/* No CSS code generated */</style>
+</head>
+<body>
+    <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game with JavaScript</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        /* Custom styles for the canvas to ensure proper scaling */
+        #gameCanvas {
+            width: 800px; /* Example width, adjust as needed */
+            height: 600px; /* Example height, adjust as needed */
+            background-color: black;
+            border: 1px solid lawngreen;
+        }
+
+        /* Ensure the canvas scales down responsively */
+        @media (max-width: 768px) {
+            #gameCanvas {
+                width: 100%; /* Full width on smaller screens */
+                height: auto; /* Adjust height proportionally */
+            }
+        }
+    </style>
+</head>
+<body class="bg-black text-white flex flex-col items-center justify-center h-screen">
+    <h1 class="text-2xl mb-4 text-lawngreen">Snake Game with JavaScript</h1>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div class="flex mt-4 space-x-4">
+        <button id="startButton" class="bg-cyan-500 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded">Start</button>
+        <button id="stopButton" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Stop</button>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
+    <script>document.addEventListener('DOMContentLoaded', () => {
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const startButton = document.getElementById('startButton');
+    const stopButton = document.getElementById('stopButton');
+
+    const grid = 16; // Size of grid cells
+    let count = 0;
+
+    let snake = {
+        x: 160,
+        y: 160,
+        dx: grid,  // Move one grid cell at a time.  Initial direction.
+        dy: 0,
+        cells: [],
+        maxCells: 4
+    };
+
+    let food = {
+        x: 320,
+        y: 320
+    };
+
+    // Game state
+    let gameRunning = false;  // Flag to control the game loop
+    let animationFrameId;  // Store the ID of the animation frame
+
+    // Function to generate random whole numbers
+    function getRandomInt(min, max) {
+        min = Math.ceil(min);
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max - min)) + min; //The maximum is exclusive and the minimum is inclusive
+    }
+
+    function gameLoop() {
+        if (!gameRunning) return; // Stop the loop if the game is not running
+        animationFrameId = requestAnimationFrame(gameLoop); // Store animation frame ID
+
+        // Slow game loop to 15fps instead of max available frame rate
+        if (++count < 4) {
+            return;
+        }
+
+        count = 0;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);  // Clear the canvas
+
+        // Move snake by it's velocity
+        snake.x += snake.dx;
+        snake.y += snake.dy;
+
+        // Wrap snake position horizontally
+        if (snake.x < 0) {
+            snake.x = canvas.width - grid;
+        } else if (snake.x >= canvas.width) {
+            snake.x = 0;
+        }
+
+        // Wrap snake position vertically
+        if (snake.y < 0) {
+            snake.y = canvas.height - grid;
+        } else if (snake.y >= canvas.height) {
+            snake.y = 0;
+        }
+
+        // Keep track of where snake has been. Front of the array is always the head.
+        snake.cells.unshift({x: snake.x, y: snake.y});
+
+        // Remove cells as we move away from them
+        if (snake.cells.length > snake.maxCells) {
+            snake.cells.pop();
+        }
+
+        // Draw food
+        ctx.fillStyle = 'red';
+        ctx.fillRect(food.x, food.y, grid - 1, grid - 1);
+
+        // Draw snake one cell at a time
+        ctx.fillStyle = 'lawngreen';
+        snake.cells.forEach(function(cell, index) {
+
+            ctx.fillRect(cell.x, cell.y, grid - 1, grid - 1);
+
+            // Snake ate food?
+            if (cell.x === food.x && cell.y === food.y) {
+                snake.maxCells++;
+
+                // Canvas is 400x400 which is 25x25 grids
+                food.x = getRandomInt(0, 25) * grid;
+                food.y = getRandomInt(0, 25) * grid;
+            }
+
+            // Check collision with all cells after this one (check for self collision)
+            for (let i = index + 1; i < snake.cells.length; i++) {
+
+                // Snake occupies same space as a body part. Reset game.
+                if (cell.x === snake.cells[i].x && cell.y === snake.cells[i].y) {
+                    resetGame();
+                }
+            }
+        });
+    }
+
+    function resetGame() {
+        snake.x = 160;
+        snake.y = 160;
+        snake.cells = [];
+        snake.maxCells = 4;
+        snake.dx = grid;
+        snake.dy = 0;
+        food.x = getRandomInt(0, 25) * grid;
+        food.y = getRandomInt(0, 25) * grid;
+    }
+
+    // Listen to keyboard events to move the snake
+    document.addEventListener('keydown', function(e) {
+        // Left arrow key
+        if (e.which === 37 && snake.dx === 0) {
+            snake.dx = -grid;
+            snake.dy = 0;
+        }
+        // Up arrow key
+        else if (e.which === 38 && snake.dy === 0) {
+            snake.dy = -grid;
+            snake.dx = 0;
+        }
+        // Right arrow key
+        else if (e.which === 39 && snake.dx === 0) {
+            snake.dx = grid;
+            snake.dy = 0;
+        }
+        // Down arrow key
+        else if (e.which === 40 && snake.dy === 0) {
+            snake.dy = grid;
+            snake.dx = 0;
+        }
+    });
+
+    // Start/Stop Button Functionality
+    startButton.addEventListener('click', () => {
+        if (!gameRunning) {
+            gameRunning = true;
+            resetGame(); // Reset the game when starting
+            gameLoop();
+        }
+    });
+
+    stopButton.addEventListener('click', () => {
+        gameRunning = false;
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId); // Cancel the animation frame
+        }
+    });
+
+    // Initially, the game is not running
+    console.log("Game is ready. Press 'Start' to begin."); // Log message for user feedback
+});</script>
+</body>
+</html>
